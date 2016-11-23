@@ -27,6 +27,23 @@
     margin-left: 32px;
 }
 
+.TasksPage__title-input {
+    .TasksPage__title;
+
+    border: none;
+    padding: 0;
+
+    &:focus {
+        outline: none;
+        background-color: lighten(@primary-color, 50%);
+    }
+}
+
 .TasksPage__modal-title {
     margin: 0;
+}
+
+.TasksPage__error {
+    margin: auto;
+    font-weight: bold;
 }

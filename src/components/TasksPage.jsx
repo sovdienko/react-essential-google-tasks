@@ -1,123 +1,135 @@
 import React, { Component, PropTypes } from 'react';
 
-import TasksActions from '../actions/TasksActions';
-import TasksStore from '../stores/TasksStore';
-import TaskCreateModal from './TaskCreateModal';
-
 import IconButton from 'material-ui/IconButton';
 import ContentAdd from 'material-ui/svg-icons/content/add';
+// import ImageEdit from 'material-ui/svg-icons/image/edit';
+import ActionDelete from 'material-ui/svg-icons/action/delete';
+import CircularProgress from 'material-ui/CircularProgress';
+
 
 import Task from './Task';
 
 
 import './TasksPage.less';
 
-function getStateFromFlux() {
-  return {
-    tasks: TasksStore.getTasks(),
-    isCreatingTask: false
-  };
-}
+const ENTER_KEY = 13;
+const ESC_KEY = 27;
 
 export default class TaskPage extends Component {
 
   static propTypes = {
-    params: PropTypes.object.isRequired
+    onAddTask: PropTypes.func,
+    onTaskStatusChange: PropTypes.func,
+    onTaskUpdate: PropTypes.func,
+    onTaskDelete: PropTypes.func,
+    onDeleteTaskList: PropTypes.func,
+    onUpdateTaskList: PropTypes.func,
+    tasks: PropTypes.array,
+    taskList: PropTypes.object,
+    error: PropTypes.string,
+    isLoadingTasks: PropTypes.bool
   }
-
 
   constructor() {
     super();
-    this._onChange = this._onChange.bind(this);
-    this.handleAddTask = this.handleAddTask.bind(this);
-    this.handleTaskSubmit = this.handleTaskSubmit.bind(this);
-    this.handleClose = this.handleClose.bind(this);
+    this.handleEditTaskList = this.handleEditTaskList.bind(this);
+    this.handleTaskListEditKeyDown = this.handleTaskListEditKeyDown.bind(this);
+    this.handleCancelTaskListEdit = this.handleCancelTaskListEdit.bind(this);
 
     this.state = {
-      ...getStateFromFlux()
+      isEditingTaskList: false
     };
   }
 
-  componentWillMount() {
-    TasksActions.loadTasks(this.props.params.id);
+  handleEditTaskList() {
+    this.setState({
+      isEditingTaskList: true
+    }, () => this.taskList.focus());
   }
 
-  componentDidMount() {
-    TasksStore.addChangeListener(this._onChange);
-  }
-
-  componentWillReceiveProps(nextProps) {
-    if (this.props.params.id !== nextProps.params.id) {
-      TasksActions.loadTasks(nextProps.params.id);
+  handleTaskListEditKeyDown(event) {
+    if (event.keyCode === ENTER_KEY) {
+      this.saveTaskList();
+    } else
+    if (event.keyCode === ESC_KEY) {
+      this.cancelEditingTaskList();
     }
   }
 
-  componentWillUnmount() {
-    TasksStore.removeChangeListener(this._onChange);
+  handleCancelTaskListEdit() {
+    this.setState({ isEditingTaskList: false });
   }
 
-  handleStatusChange(taskId, { isCompleted }) {
-    TasksActions.updateTaskStatus({
-      taskListId: this.props.params.id,
-      taskId,
-      isCompleted
+  saveTaskList() {
+    this.props.onUpdateTaskList({
+      name: this.taskList.value
     });
+    this.handleCancelTaskListEdit();
   }
 
-  handleAddTask() {
-    this.setState({ isCreatingTask : true });
-  }
-
-  handleClose() {
-    this.setState({ isCreatingTask : false });
-  }
-
-  handleTaskSubmit(task) {
-    const taskListId = this.props.params.id;
-
-    TasksActions.createTask({ taskListId, ...task });
-    this.setState({ isCreatingTask : false });
-  }
-
-  handleTaskUpdate(taskId, { text }) {
-    TasksActions.updateTask({
-      taskListId: this.props.params.id,
-      taskId,
-      text
-    });
-  }
-
-  _onChange() {
-    this.setState(getStateFromFlux());
+  renderTasks() {
+    return (
+      <div className='TasksPage__tasks'>
+        {this.props.tasks.map(task =>
+          <Task
+            key={task.id}
+            text={task.text}
+            notes={task.notes}
+            due={task.due}
+            isCompleted={task.isCompleted}
+            onDelete={this.props.onTaskDelete.bind(this, task.id)}
+            onStatusChange={this.props.onTaskStatusChange.bind(this, task.id)}
+            onUpdate={this.props.onTaskUpdate.bind(this, task.id)}
+          />
+        )}
+      </div>
+    );
   }
 
   render() {
+    if (this.props.error) {
+      return (
+        <div className='TasksPage'>
+          <div className='TasksPage__error'>
+            {this.props.error}
+          </div>
+        </div>
+      );
+    }
+
     return (
       <div className = 'TasksPage'>
         <div className='TasksPage__header'>
-          <h2 className='TasksPage__title'>List name</h2>
+          {this.state.isEditingTaskList
+          ?
+            <input
+              ref={c => this.taskList = c}
+              className='TasksPage__title-input'
+              defaultValue={this.props.taskList.name}
+              onKeyDown={this.handleTaskListEditKeyDown}
+              onBlur={this.handleCancelTaskListEdit}
+            />
+          :
+          <h2
+            className='TasksPage__title'
+            onClick={this.handleEditTaskList}
+          >
+            {this.props.taskList.name}
+          </h2>
+          }
           <div className='TasksPage__tools'>
-            <IconButton onClick={this.handleAddTask}>
+            <IconButton onClick={this.props.onAddTask}>
               <ContentAdd/>
+            </IconButton>
+            <IconButton onClick={this.props.onDeleteTaskList}>
+              <ActionDelete/>
             </IconButton>
           </div>
         </div>
-        <div className='TasksPage__tasks'>
-          {this.state.tasks.map(task =>
-            <Task
-              key={task.id}
-              text={task.text}
-              isCompleted={task.isCompleted}
-              onStatusChange={this.handleStatusChange.bind(this, task.id)}
-              onUpdate={this.handleTaskUpdate.bind(this, task.id)}
-            />
-          )}
-        </div>
-        <TaskCreateModal
-          isOpen={this.state.isCreatingTask}
-          onSubmit={this.handleTaskSubmit}
-          onClose={this.handleClose}
-        />
+        {this.props.isLoadingTasks
+          ? <CircularProgress />
+          : this.renderTasks()
+        }
       </div>
     );
   }

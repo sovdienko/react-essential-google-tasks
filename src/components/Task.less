@@ -21,6 +21,15 @@
     min-height: 20px;
 }
 
+.Task__note {
+    // обычно, следует избегать использования !important
+    // но в библитотеке material-ui используются inline стили,
+    // и здесь используется !important чтобы наши стили применились к элементу
+    width: 15px !important;
+    height: 15px !important;
+    margin-left: 8px;
+}
+
 .Task__due {
     width: 100%;
     color: @secondary-text-color;
@@ -38,11 +47,37 @@
     }
 }
 
-.Task__input {
+.Task__text-input {
     font-size: 16px;
     margin: 8px 16px;
     padding: 6px;
     width: 100%;
+    border: 1px solid @divider-color;
+
+    &:focus {
+        outline: 0;
+        border: 1px solid @primary-color;
+    }
+}
+
+.Task__due-input {
+    font-size: 16px;
+    margin: 8px 16px;
+    padding: 6px;
+    width: 100%;
+  
+    &:focus {
+        outline: 0;
+        border: 1px solid @primary-color;
+    }
+}
+
+.Task__note-input {
+    font-size: 16px;
+    margin: 8px 16px;
+    padding: 6px;
+    width: 100%;
+    resize: vertical;
     border: 1px solid @divider-color;
 
     &:focus {

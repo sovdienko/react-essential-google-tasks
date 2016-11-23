@@ -8,71 +8,24 @@ import HomeIcon from 'material-ui/svg-icons/action/home';
 import ExitIcon from 'material-ui/svg-icons/action/exit-to-app';
 import FolderIcon from 'material-ui/svg-icons/file/folder';
 import AddIcon from 'material-ui/svg-icons/content/add';
-import TaskListsActions from '../actions/TaskListsActions';
-import TaskListsStore from '../stores/TaskListsStore';
-import TaskListCreateModal from './TaskListCreateModal';
+
 
 import './TasklistsPage.less';
 
-
-function getStateFromFlux() {
-  return {
-    taskLists: TaskListsStore.getTaskLists()
-  };
-}
-
 export default class TasklistsPage extends Component {
-  static propTypes = {
-    children: PropTypes.node
+
+  static propTypes ={
+    taskLists: PropTypes.array,
+    onAddTaskList: PropTypes.func,
+    selectedListId: PropTypes.string,
+    onLogOut: PropTypes.func,
+    page: PropTypes.node
   }
 
   static contextTypes = {
     router: PropTypes.object.isRequired
   }
 
-
-  constructor() {
-    super();
-    this._onChange = this._onChange.bind(this);
-    this.handleTaskListSubmit = this.handleTaskListSubmit.bind(this);
-    this.handleClose = this.handleClose.bind(this);
-    // this.handleLogOut = this.handleLogOut.bind(this);
-    this.handleAddTaskList = this.handleAddTaskList.bind(this);
-
-    this.state = {
-      ...getStateFromFlux(),
-      isCreatingTaskList: false
-    };
-  }
-
-  componentWillMount() {
-    TaskListsActions.loadTaskLists();
-  }
-
-  componentDidMount() {
-    TaskListsStore.addChangeListener(this._onChange);
-  }
-
-  componentWillUnmount() {
-    TaskListsStore.removeChangeListener(this._onChange);
-  }
-
-  handleAddTaskList() {
-    this.setState({ isCreatingTaskList: true });
-  }
-
-  handleTaskListSubmit(taskList) {
-    TaskListsActions.createTaskList(taskList);
-    this.setState({ isCreatingTaskList: false });
-  }
-
-  handleClose() {
-    this.setState({ isCreatingTaskList: false });
-  }
-
-  _onChange() {
-    this.setState(getStateFromFlux());
-  }
   render() {
     const { router } = this.context;
 
@@ -97,10 +50,17 @@ export default class TasklistsPage extends Component {
             <Divider/>
             <List className='TasklistsPage__list'>
               <Subheader>Task Lists</Subheader>
-              {this.state.taskLists.map(list =>
+              {this.props.taskLists.map(list =>
                 <ListItem
                   key={list.id}
                   leftIcon={<FolderIcon />}
+                  style={
+                      this.props.selectedListId === list.id
+                      ?
+                        { backgroundColor: 'rgba(0,0,0,0.1)' }
+                      :
+                        null
+                  }
                   primaryText={list.name}
                   onClick={router.push.bind(null, `/lists/${list.id}`)}
                 />
@@ -108,7 +68,7 @@ export default class TasklistsPage extends Component {
               <ListItem
                 leftIcon={<AddIcon />}
                 primaryText='Create new list'
-                onClick={this.handleAddTaskList}
+                onClick={this.props.onAddTaskList}
               />
             </List>
             <Divider/>
@@ -116,19 +76,14 @@ export default class TasklistsPage extends Component {
               <ListItem
                 leftIcon={<ExitIcon />}
                 primaryText='Log out'
-                onClick={this.handleLogOut}
+                onClick={this.props.onLogOut}
               />
             </List>
           </List>
         </div>
         <div className='TasklistsPage__tasks'>
-          {this.props.children}
+          {this.props.page}
         </div>
-        <TaskListCreateModal
-          isOpen={this.state.isCreatingTaskList}
-          onSubmit={this.handleTaskListSubmit}
-          onClose={this.handleClose}
-        />
       </div>
     );
   }

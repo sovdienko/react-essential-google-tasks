@@ -1,11 +1,12 @@
-const CLIENT_ID = '752936597614-k3fgcu8u140fa1uqd4je1dr2uvj6jucs.apps.googleusercontent.com';
+// import { clientId } from '../config';
+
 const SCOPES = ['https://www.googleapis.com/auth/tasks', 'https://www.googleapis.com/auth/plus.me'];
 
 export default {
   authorize(params) {
     return new Promise((resolve, reject) => {
       gapi.auth.authorize({
-        'client_id': CLIENT_ID,
+        'client_id': __CONFIG__.clientId,
         'scope': SCOPES,
         'immediate': params.immediate,
         'cookie_policy': 'single_host_origin'
@@ -14,7 +15,8 @@ export default {
         if (authResult.error) {
           return reject(authResult.error);
         }
-        return gapi.client.load('tasks', 'v1', () => gapi.client.load('plus', 'v1', () => resolve()));
+        return gapi.client.load('tasks', 'v1', () =>
+          gapi.client.load('plus', 'v1', () => resolve()));
       });
     });
   },
@@ -22,17 +24,37 @@ export default {
   listTaskLists() {
     const request = gapi.client.tasks.tasklists.list();
 
-    return new Promise((resolve, reject) => {
-      request.execute(resp => resolve(resp));
-    });
+    return this.makeRequest(request);
+  },
+
+  showTaskList(taskListId) {
+    const request = gapi.client.tasks.tasklists.get({ tasklist: taskListId });
+
+    return this.makeRequest(request);
   },
 
   insertTaskList({ title }) {
     const request = gapi.client.tasks.tasklists.insert({ title });
 
-    return new Promise((resolve, reject) => {
-      request.execute(resp => resolve(resp));
+    return this.makeRequest(request);
+  },
+
+  updateTaskList({ taskListId, title }) {
+    const request = gapi.client.tasks.tasklists.update({
+      tasklist: taskListId,
+      id: taskListId,
+      title
     });
+
+    return this.makeRequest(request);
+  },
+
+  deleteTaskList({ taskListId }) {
+    const request = gapi.client.tasks.tasklists.delete({
+      tasklist: taskListId
+    });
+
+    return this.makeRequest(request);
   },
 
   listTasks(taskListId) {
@@ -40,20 +62,16 @@ export default {
       tasklist: taskListId
     });
 
-    return new Promise((resolve, reject) => {
-      request.execute(resp => resolve(resp));
-    });
+    return this.makeRequest(request);
   },
 
-  insertTask({ taskListId, title }) {
+  insertTask({ taskListId, ...params }) {
     const request = gapi.client.tasks.tasks.insert({
       tasklist: taskListId,
-      title
+      ...params
     });
 
-    return new Promise((resolve, reject) => {
-      request.execute(resp => resolve(resp));
-    });
+    return this.makeRequest(request);
   },
 
   updateTask({ taskListId, taskId, ...params }) {
@@ -64,8 +82,26 @@ export default {
       ...params
     });
 
+    return this.makeRequest(request);
+  },
+
+  deleteTask({ taskListId, taskId }) {
+    const request = gapi.client.tasks.tasks.delete({
+      tasklist: taskListId,
+      task: taskId,
+      id: taskId
+    });
+
+    return this.makeRequest(request);
+  },
+
+  makeRequest(requestObj) {
     return new Promise((resolve, reject) => {
-      request.execute(resp => resolve(resp));
+      requestObj.execute(resp =>
+        resp.error
+        ? reject(resp.error)
+        : resolve(resp.result));
     });
   }
+
 };

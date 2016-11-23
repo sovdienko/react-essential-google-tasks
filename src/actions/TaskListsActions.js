@@ -20,6 +20,22 @@ const TaskListsActions = {
       });
   },
 
+  loadTaskList(taskListId) {
+    api.showTaskList(taskListId)
+      .then((data) => {
+        AppDispatcher.dispatch({
+          type: AppConstants.TASK_LIST_LOAD_SUCCESS,
+          taskList: data
+        });
+      })
+      .catch((err) => {
+        AppDispatcher.dispatch({
+          type: AppConstants.TASK_LIST_LOAD_FAIL,
+          error: err
+        });
+      });
+  },
+
   createTaskList(params) {
     api.insertTaskList({ title: params.name })
       .then((data) => {
@@ -34,7 +50,41 @@ const TaskListsActions = {
           error: err
         });
       });
+  },
+
+  updateTaskList(params) {
+    api.updateTaskList({ taskListId: params.taskListId, title: params.name })
+      .then((data) => {
+        AppDispatcher.dispatch({
+          type: AppConstants.TASK_LIST_UPDATE_SUCCESS,
+          taskListId: params.taskListId,
+          taskList: data
+        });
+      })
+      .catch((err) => {
+        AppDispatcher.dispatch({
+          type: AppConstants.TASK_LIST_UPDATE_FAIL,
+          error: err
+        });
+      });
+  },
+
+  deleteTaskList(params) {
+    api.deleteTaskList({ taskListId: params.taskListId })
+      .then(() => {
+        AppDispatcher.dispatch({
+          type: AppConstants.TASK_LIST_DELETE_SUCCESS,
+          taskListId: params.taskListId
+        });
+      })
+      .catch((err) => {
+        AppDispatcher.dispatch({
+          type: AppConstants.TASK_LIST_DELETE_FAIL,
+          error: err
+        });
+      });
   }
+
 };
 
 export default TaskListsActions;
